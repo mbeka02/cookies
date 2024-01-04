@@ -71,16 +71,13 @@ func ReadSigned(r *http.Request, name string, secretKey []byte) (string, error) 
 		return "", err
 	}
 
-	// A SHA256 HMAC signature has a fixed length of 32 bytes. To avoid a potential
-	// 'index out of range' panic in the next step, we need to check sure that the
-	// length of the signed cookie value is at least this long. We'll use the
-	// sha256.Size constant here, rather than 32, just because it makes our code
-	// a bit more understandable at a glance.
+	// A SHA256 HMAC signature has a fixed length of 32 bytes. To avoid a potential 'index out of range' 
+	//panic in the next step , I need to ensure that the signed value is atleast 32 bytes.
 	if len(signedValue) < sha256.Size {
 		return "", ErrInvalidValue
 	}
 
-	// Split apart the signature and original cookie value.
+	// Split apart the signature and original cookie value (I prepended the signature so it should be first).
 	signature := signedValue[:sha256.Size]
 	value := signedValue[sha256.Size:]
 
