@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"log"
 	"net/http"
@@ -8,13 +9,21 @@ import (
 	"github.com/mbeka02/cookies_go/internal/cookies"
 )
 
+var secretKey []byte
+
 func main() {
+	var err error
+	// Decode the random 64-character hex string to give us a slice containing 32 random bytes
+	secretKey, err = hex.DecodeString("13d6b4dff8f84a10851021ec8608f814570d562c92fe6b5ec4c9f595bcb3234b")
+	if err != nil {
+		log.Fatal(err)
+	}
 	var port = "3000"
 	mux := http.NewServeMux()
 	mux.HandleFunc("/set", setCookieHandler)
 	mux.HandleFunc("/get", getCookieHandler)
 	log.Printf("Listening on port : %v", port)
-	err := http.ListenAndServe(":"+port, mux)
+	err = http.ListenAndServe(":"+port, mux)
 
 	if err != nil {
 		log.Fatal(err)
@@ -31,7 +40,7 @@ func setCookieHandler(w http.ResponseWriter, r *http.Request) {
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	}
-	err := cookies.Write(w, cookie)
+	err := cookies.WriteSigned(w, cookie, secretKey)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -44,7 +53,7 @@ func setCookieHandler(w http.ResponseWriter, r *http.Request) {
 
 func getCookieHandler(w http.ResponseWriter, r *http.Request) {
 
-	val, err := cookies.Read(r, "DemoCookie")
+	val, err := cookies.ReadSigned(r, "DemoCookie", secretKey)
 
 	if err != nil {
 		switch {
